@@ -1,11 +1,15 @@
 package com.cnl.habittracker_backend.controller;
 
+import com.cnl.habittracker_backend.model.Habit;
 import com.cnl.habittracker_backend.model.dto.HabitRequest;
 import com.cnl.habittracker_backend.model.dto.HabitResponse;
 import com.cnl.habittracker_backend.service.HabitService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @CrossOrigin
@@ -15,16 +19,39 @@ public class HabitController {
     private HabitService service;
 
     //Create Habit
-    public HabitResponse createHabit(HabitRequest habitRequest) {
-        System.out.println("Habit request received");
-        return service.createHabit(habitRequest);
+    @PostMapping("/habits")
+    public ResponseEntity<HabitResponse> createHabit(@RequestBody HabitRequest habitRequest) {
+        System.out.println("Create Habit method called");
+        return new ResponseEntity<>(service.createHabit(habitRequest), HttpStatus.OK);
     }
 
     //Read Habit
+    @GetMapping("/habits/{habitId}")
+    public ResponseEntity<HabitResponse> getHabit(@PathVariable int habitId) {
+        System.out.println("Get Habit method called");
+        return new ResponseEntity<>(service.getHabit(habitId), HttpStatus.OK);
+    }
+
 
     //Read Habits
+    @GetMapping("/habits")
+    public ResponseEntity<List<HabitResponse>> getHabits() {
+        System.out.println("Get Habits method called");
+        return new ResponseEntity<>(service.getHabits(), HttpStatus.OK);
+    }
 
     //Update Habit
+    @PutMapping("/habits/{habitId}")
+    public ResponseEntity<HabitResponse> updateHabit(@PathVariable int habitId, @RequestBody HabitRequest request) {
+        System.out.println("Update Habit method called");
+        return new ResponseEntity<>(service.updateHabit(habitId, request), HttpStatus.OK);
+    }
 
     //Delete Habit
+    @DeleteMapping("/habits/{habitId}")
+    public ResponseEntity<Void> deleteHabit(@PathVariable int habitId) {
+        System.out.println("Delete Habit method called");
+        service.deleteHabit(habitId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
