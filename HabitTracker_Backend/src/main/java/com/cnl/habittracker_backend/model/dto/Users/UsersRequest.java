@@ -1,4 +1,4 @@
-package com.cnl.habittracker_backend.model.dto;
+package com.cnl.habittracker_backend.model.dto.Users;
 
 public record UsersRequest(
 

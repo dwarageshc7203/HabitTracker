@@ -1,7 +1,7 @@
 package com.cnl.habittracker_backend.controller;
 
-import com.cnl.habittracker_backend.model.dto.UsersRequest;
-import com.cnl.habittracker_backend.model.dto.UsersResponse;
+import com.cnl.habittracker_backend.model.dto.Users.UsersRequest;
+import com.cnl.habittracker_backend.model.dto.Users.UsersResponse;
 import com.cnl.habittracker_backend.service.UsersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

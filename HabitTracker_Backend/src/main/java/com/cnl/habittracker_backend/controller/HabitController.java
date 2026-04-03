@@ -1,7 +1,7 @@
 package com.cnl.habittracker_backend.controller;
 
-import com.cnl.habittracker_backend.model.dto.HabitRequest;
-import com.cnl.habittracker_backend.model.dto.HabitResponse;
+import com.cnl.habittracker_backend.model.dto.Habit.HabitRequest;
+import com.cnl.habittracker_backend.model.dto.Habit.HabitResponse;
 import com.cnl.habittracker_backend.service.HabitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,10 +18,10 @@ public class HabitController {
     private HabitService service;
 
     //Create Habit
-    @PostMapping("/habits")
-    public ResponseEntity<HabitResponse> createHabit(@RequestBody HabitRequest habitRequest) {
+    @PostMapping("/users/{userId}/habits")
+    public ResponseEntity<HabitResponse> createHabit(@PathVariable int userId, @RequestBody HabitRequest habitRequest) {
         System.out.println("Create Habit method called");
-        return new ResponseEntity<>(service.createHabit(habitRequest), HttpStatus.OK);
+        return new ResponseEntity<>(service.createHabit(userId, habitRequest), HttpStatus.OK);
     }
 
     //Read Habit
@@ -40,10 +40,10 @@ public class HabitController {
     }
 
     //Update Habit
-    @PutMapping("/habits/{habitId}")
-    public ResponseEntity<HabitResponse> updateHabit(@PathVariable int habitId, @RequestBody HabitRequest request) {
+    @PutMapping("/users/{userId}/habits/{habitId}")
+    public ResponseEntity<HabitResponse> updateHabit(@PathVariable int userId, @PathVariable int habitId, @RequestBody HabitRequest request) {
         System.out.println("Update Habit method called");
-        return new ResponseEntity<>(service.updateHabit(habitId, request), HttpStatus.OK);
+        return new ResponseEntity<>(service.updateHabit(userId, habitId, request), HttpStatus.OK);
     }
 
     //Delete Habit

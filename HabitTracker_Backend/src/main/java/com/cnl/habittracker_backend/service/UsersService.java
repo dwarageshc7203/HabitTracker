@@ -1,9 +1,8 @@
 package com.cnl.habittracker_backend.service;
 
 import com.cnl.habittracker_backend.model.Users;
-import com.cnl.habittracker_backend.model.dto.HabitRequest;
-import com.cnl.habittracker_backend.model.dto.UsersRequest;
-import com.cnl.habittracker_backend.model.dto.UsersResponse;
+import com.cnl.habittracker_backend.model.dto.Users.UsersRequest;
+import com.cnl.habittracker_backend.model.dto.Users.UsersResponse;
 import com.cnl.habittracker_backend.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

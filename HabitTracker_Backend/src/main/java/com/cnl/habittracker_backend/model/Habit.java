@@ -1,9 +1,6 @@
 package com.cnl.habittracker_backend.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -22,5 +19,9 @@ public class Habit {
     private List<String> habitTags;
     @CreationTimestamp
     private Instant createdAt;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
 
 }
