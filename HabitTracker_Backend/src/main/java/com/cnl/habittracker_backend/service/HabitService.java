@@ -7,7 +7,6 @@ import com.cnl.habittracker_backend.repository.HabitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
