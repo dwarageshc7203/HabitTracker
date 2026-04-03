@@ -1,6 +1,7 @@
 package com.cnl.habittracker_backend.service;
 
 import com.cnl.habittracker_backend.model.Users;
+import com.cnl.habittracker_backend.model.dto.HabitRequest;
 import com.cnl.habittracker_backend.model.dto.UsersRequest;
 import com.cnl.habittracker_backend.model.dto.UsersResponse;
 import com.cnl.habittracker_backend.repository.UsersRepository;
@@ -43,5 +44,35 @@ public class UsersService {
                 user.getStreaks(),
                 user.getCreatedAt()
         );
+    }
+
+    //update User
+    public UsersResponse updateUser(int userId, UsersRequest request) {
+        Users user = repository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(request.userName() != null) {
+            user.setUserName(request.userName());
+        }
+        if(request.password() != null) {
+            user.setPassword(request.password());
+        }
+
+        Users updatedUser = repository.save(user);
+
+        return new UsersResponse(
+                updatedUser.getUserId(),
+                updatedUser.getUserName(),
+                updatedUser.getPassword(),
+                updatedUser.getStreaks(),
+                updatedUser.getCreatedAt()
+        );
+    }
+
+    //delete User
+    public void deleteUser(int userId) {
+        repository.deleteById(userId);
+        System.out.println("User deleted");
+
     }
 }

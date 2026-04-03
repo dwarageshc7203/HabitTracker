@@ -26,8 +26,19 @@ public class UsersController {
         return new ResponseEntity<>(service.getUser(userId), HttpStatus.OK);
     }
 
+    //get Users -> not needed?
 
-    //getUsers
+    //update User
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<UsersResponse> updateUser(@PathVariable int userId, @RequestBody UsersRequest request) {
+        return new ResponseEntity<>(service.updateUser(userId, request), HttpStatus.OK);
+    }
 
+    //delete User
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable int userId) {
+        service.deleteUser(userId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
 }

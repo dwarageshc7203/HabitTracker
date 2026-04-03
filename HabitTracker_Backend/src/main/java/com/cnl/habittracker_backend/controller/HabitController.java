@@ -1,6 +1,5 @@
 package com.cnl.habittracker_backend.controller;
 
-import com.cnl.habittracker_backend.model.Habit;
 import com.cnl.habittracker_backend.model.dto.HabitRequest;
 import com.cnl.habittracker_backend.model.dto.HabitResponse;
 import com.cnl.habittracker_backend.service.HabitService;
