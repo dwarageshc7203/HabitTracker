@@ -100,6 +100,24 @@ public class HabitLogService {
                 .collect(Collectors.toList());
     }
 
+    public void deleteLog(int userId, int habitId, LocalDate logDate) {
+        Habit habit = habitRepository.findById(habitId)
+                .orElseThrow(() -> new NotFoundException("Habit not found"));
+
+        if (habit.getUser().getUserId() != userId) {
+            throw new UnauthorizedException("Unauthorized: You can only delete logs for your own habits");
+        }
+
+        if (logDate == null) {
+            throw new BadRequestException("logDate is required");
+        }
+
+        HabitLog log = repository.findByHabit_HabitIdAndLogDate(habitId, logDate)
+                .orElseThrow(() -> new NotFoundException("Log not found"));
+
+        repository.delete(log);
+    }
+
     private HabitLogResponse mapToResponse(HabitLog log) {
         return new HabitLogResponse(
                 log.getLogId(),

@@ -130,6 +130,10 @@ const getLogsForRange = async (
   return results.flat()
 }
 
+const deleteHabitLog = async (habitId: string, logDate: string): Promise<void> => {
+  await api.delete(`/api/habits/${habitId}/logs`, { params: { date: logDate } })
+}
+
 export const habitService = {
   getHabits,
   createHabit,
@@ -138,4 +142,5 @@ export const habitService = {
   createHabitLog,
   getHabitLogs,
   getLogsForRange,
+  deleteHabitLog,
 }
