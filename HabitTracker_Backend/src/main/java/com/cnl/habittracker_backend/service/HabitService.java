@@ -51,10 +51,15 @@ public class HabitService {
     }
 
     //read Habit
-    public HabitResponse getHabit(int habitId) {
+    public HabitResponse getHabit(int userId, int habitId) {
 
         Habit habit = repository.findById(habitId)
                 .orElseThrow( () -> new RuntimeException("Habit not found") );
+
+        // Validate ownership
+        if (habit.getUser().getUserId() != userId) {
+            throw new RuntimeException("Unauthorized: You can only access your own habits");
+        }
 
         return new HabitResponse(
                 habit.getHabitId(),
@@ -66,10 +71,10 @@ public class HabitService {
         );
     }
 
-    //read Habits
-    public List<HabitResponse> getHabits() {
+    //read Habits - filtered by userId
+    public List<HabitResponse> getHabits(int userId) {
 
-        return repository.findAll()
+        return repository.findByUser_UserId(userId)
                 .stream()
                 .map(habit -> new HabitResponse(
                     habit.getHabitId(),
@@ -87,6 +92,11 @@ public class HabitService {
 
         Habit habit = repository.findById(habitId)
                 .orElseThrow(() -> new RuntimeException("Habit not found"));
+
+        // Validate ownership
+        if (habit.getUser().getUserId() != userId) {
+            throw new RuntimeException("Unauthorized: You can only modify your own habits");
+        }
 
         if (request.habitName() != null) {
             habit.setHabitName(request.habitName());
@@ -112,7 +122,15 @@ public class HabitService {
         );
     }
 
-    public void deleteHabit(int habitId) {
+    public void deleteHabit(int userId, int habitId) {
+        Habit habit = repository.findById(habitId)
+                .orElseThrow(() -> new RuntimeException("Habit not found"));
+
+        // Validate ownership
+        if (habit.getUser().getUserId() != userId) {
+            throw new RuntimeException("Unauthorized: You can only delete your own habits");
+        }
+
         repository.deleteById(habitId);
         System.out.println("Habit deleted");
     }
