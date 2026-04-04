@@ -1,59 +1,73 @@
 import api from './api'
-import type { Entry, Habit, HabitStatus } from '../types/api'
-
-type EntryPayload = {
-  date: string
-  status: HabitStatus
-}
+import type {
+  Habit,
+  HabitDifficulty,
+  HabitLog,
+  HabitLogStatus,
+} from '../types/api'
 
 type HabitPayload = {
   name: string
-  description?: string
-  tags?: string[]
+  category: string
+  difficulty: HabitDifficulty
+}
+
+type HabitLogPayload = {
+  logDate: string
+  status: HabitLogStatus
+  timezone?: string
 }
 
 type BackendHabit = {
   habitId: number
   habitName: string
-  habitDescription?: string
-  habitTags?: string[]
+  habitCategory: string
+  habitDifficulty: HabitDifficulty
   createdAt?: string
+  currentStreak: number
+  longestStreak: number
+  completionRate: number
 }
 
 type BackendHabitPayload = {
-  userId?: number
   habitName: string
-  habitDescription?: string
-  habitTags?: string[]
+  habitCategory: string
+  habitDifficulty: HabitDifficulty
 }
 
-type BackendEntry = {
-  entryId: number
+type BackendHabitLog = {
+  logId: number
   habitId: number
-  entryStatus: HabitStatus
-  completedAt?: string
+  logDate: string
+  status: HabitLogStatus
+  timezone?: string
+  createdAt?: string
 }
 
-type BackendEntryPayload = {
-  userId?: number
-  habitId: number
-  entryStatus: HabitStatus
-  completedAt: string
+type BackendHabitLogPayload = {
+  logDate: string
+  status: HabitLogStatus
+  timezone?: string
 }
 
 const toHabit = (data: BackendHabit): Habit => ({
   id: String(data.habitId),
   name: data.habitName,
-  description: data.habitDescription,
-  tags: data.habitTags,
+  category: data.habitCategory,
+  difficulty: data.habitDifficulty,
   createdAt: data.createdAt,
+  currentStreak: data.currentStreak,
+  longestStreak: data.longestStreak,
+  completionRate: data.completionRate,
 })
 
-const toEntry = (data: BackendEntry): Entry => ({
-  id: String(data.entryId),
+const toHabitLog = (data: BackendHabitLog): HabitLog => ({
+  id: String(data.logId),
   habitId: String(data.habitId),
-  status: data.entryStatus,
-  date: data.completedAt ? data.completedAt.split('T')[0] : '',
+  logDate: data.logDate,
+  status: data.status,
+  timezone: data.timezone,
+  createdAt: data.createdAt,
 })
 
 const getHabits = async (): Promise<Habit[]> => {
@@ -63,10 +77,9 @@ const getHabits = async (): Promise<Habit[]> => {
 
 const createHabit = async (payload: HabitPayload): Promise<Habit> => {
   const backendPayload: BackendHabitPayload = {
-    userId: 0,
     habitName: payload.name,
-    habitDescription: payload.description,
-    habitTags: payload.tags,
+    habitCategory: payload.category,
+    habitDifficulty: payload.difficulty,
   }
   const { data } = await api.post('/api/habits', backendPayload)
   return toHabit(data as BackendHabit)
@@ -74,12 +87,11 @@ const createHabit = async (payload: HabitPayload): Promise<Habit> => {
 
 const updateHabit = async (id: string, payload: HabitPayload): Promise<Habit> => {
   const backendPayload: BackendHabitPayload = {
-    userId: 0,
     habitName: payload.name,
-    habitDescription: payload.description,
-    habitTags: payload.tags,
+    habitCategory: payload.category,
+    habitDifficulty: payload.difficulty,
   }
-  const { data } = await api.put(`/api/habits/${id}`, backendPayload)
+  const { data } = await api.patch(`/api/habits/${id}`, backendPayload)
   return toHabit(data as BackendHabit)
 }
 
@@ -87,24 +99,35 @@ const deleteHabit = async (id: string): Promise<void> => {
   await api.delete(`/api/habits/${id}`)
 }
 
-const logHabitEntry = async (habitId: string, payload: EntryPayload): Promise<Entry> => {
-  const completedAt = new Date(`${payload.date}T00:00:00Z`).toISOString()
-  const backendPayload: BackendEntryPayload = {
-    userId: 0,
-    habitId: Number(habitId),
-    entryStatus: payload.status,
-    completedAt,
+const createHabitLog = async (
+  habitId: string,
+  payload: HabitLogPayload
+): Promise<HabitLog> => {
+  const backendPayload: BackendHabitLogPayload = {
+    logDate: payload.logDate,
+    status: payload.status,
+    timezone: payload.timezone,
   }
-  const { data } = await api.post(`/api/habits/${habitId}/entries`, backendPayload)
-  return toEntry(data as BackendEntry)
+  const { data } = await api.post(`/api/habits/${habitId}/logs`, backendPayload)
+  return toHabitLog(data as BackendHabitLog)
 }
 
-const getEntries = async (params?: {
-  from?: string
-  to?: string
-}): Promise<Entry[]> => {
-  const { data } = await api.get('/api/entries', { params })
-  return (data as BackendEntry[]).map(toEntry)
+const getHabitLogs = async (
+  habitId: string,
+  params?: { from?: string; to?: string }
+): Promise<HabitLog[]> => {
+  const { data } = await api.get(`/api/habits/${habitId}/logs`, { params })
+  return (data as BackendHabitLog[]).map(toHabitLog)
+}
+
+const getLogsForRange = async (
+  habitIds: string[],
+  params?: { from?: string; to?: string }
+): Promise<HabitLog[]> => {
+  const results = await Promise.all(
+    habitIds.map((id) => getHabitLogs(id, params))
+  )
+  return results.flat()
 }
 
 export const habitService = {
@@ -112,6 +135,7 @@ export const habitService = {
   createHabit,
   updateHabit,
   deleteHabit,
-  logHabitEntry,
-  getEntries,
+  createHabitLog,
+  getHabitLogs,
+  getLogsForRange,
 }

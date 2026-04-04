@@ -1,4 +1,6 @@
-export type HabitStatus = 'complete' | 'partial' | 'missed'
+export type HabitLogStatus = 'DONE' | 'MISSED'
+
+export type HabitDifficulty = 'EASY' | 'MEDIUM' | 'HARD'
 
 export type User = {
   id: string
@@ -13,16 +15,21 @@ export type User = {
 export type Habit = {
   id: string
   name: string
-  description?: string
-  tags?: string[]
+  category: string
+  difficulty: HabitDifficulty
   createdAt?: string
+  currentStreak: number
+  longestStreak: number
+  completionRate: number
 }
 
-export type Entry = {
+export type HabitLog = {
   id: string
   habitId: string
-  date: string
-  status: HabitStatus
+  logDate: string
+  status: HabitLogStatus
+  timezone?: string
+  createdAt?: string
 }
 
 export type AuthResponse = {

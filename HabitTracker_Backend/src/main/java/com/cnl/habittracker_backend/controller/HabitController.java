@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class HabitController {
     @PostMapping("/habits")
     public ResponseEntity<HabitResponse> createHabit(
             @RequestHeader("Authorization") String token,
-            @RequestBody HabitRequest habitRequest) {
+            @Valid @RequestBody HabitRequest habitRequest) {
         System.out.println("Create Habit method called");
         int userId = securityUtil.extractUserIdFromToken(token);
         return new ResponseEntity<>(service.createHabit(userId, habitRequest), HttpStatus.CREATED);
@@ -56,8 +57,19 @@ public class HabitController {
     public ResponseEntity<HabitResponse> updateHabit(
             @RequestHeader("Authorization") String token,
             @PathVariable int habitId,
-            @RequestBody HabitRequest request) {
+            @Valid @RequestBody HabitRequest request) {
         System.out.println("Update Habit method called");
+        int userId = securityUtil.extractUserIdFromToken(token);
+        return new ResponseEntity<>(service.updateHabit(userId, habitId, request), HttpStatus.OK);
+    }
+
+    // Patch Habit (same validation as create)
+    @PatchMapping("/habits/{habitId}")
+    public ResponseEntity<HabitResponse> patchHabit(
+            @RequestHeader("Authorization") String token,
+            @PathVariable int habitId,
+            @Valid @RequestBody HabitRequest request) {
+        System.out.println("Patch Habit method called");
         int userId = securityUtil.extractUserIdFromToken(token);
         return new ResponseEntity<>(service.updateHabit(userId, habitId, request), HttpStatus.OK);
     }

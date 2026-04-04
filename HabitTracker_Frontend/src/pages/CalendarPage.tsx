@@ -1,21 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useHabitStore } from '../store/habitStore'
 import type { HabitState } from '../store/habitStore'
-import type { Entry, Habit } from '../types/api'
+import type { Habit, HabitLog } from '../types/api'
 
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-const formatDateKey = (date: Date) => date.toISOString().split('T')[0]
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 const CalendarPage = () => {
   const habits = useHabitStore((state: HabitState) => state.habits)
-  const entries = useHabitStore((state: HabitState) => state.entries)
+  const logs = useHabitStore((state: HabitState) => state.logs)
   const fetchHabits = useHabitStore((state: HabitState) => state.fetchHabits)
-  const fetchEntries = useHabitStore(
-    (state: HabitState) => state.fetchEntries
-  )
+  const fetchLogs = useHabitStore((state: HabitState) => state.fetchLogs)
   const [currentDate, setCurrentDate] = useState(() => new Date())
-  const [selectedDate, setSelectedDate] = useState(() => formatDateKey(new Date()))
+  const [selectedDate, setSelectedDate] = useState(() => toDateKey(new Date()))
 
   useEffect(() => {
     fetchHabits()
@@ -24,8 +27,8 @@ const CalendarPage = () => {
   useEffect(() => {
     const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
-    fetchEntries({ from: formatDateKey(start), to: formatDateKey(end) })
-  }, [currentDate, fetchEntries])
+    fetchLogs({ from: toDateKey(start), to: toDateKey(end) })
+  }, [currentDate, fetchLogs])
 
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear()
@@ -44,29 +47,37 @@ const CalendarPage = () => {
     return days
   }, [currentDate])
 
-  const entriesByDate = useMemo(() => {
-    const map = new Map<string, Entry[]>()
-    entries.forEach((entry: Entry) => {
-      const key = entry.date.split('T')[0]
+  const logsByDate = useMemo(() => {
+    const map = new Map<string, HabitLog[]>()
+    logs.forEach((log: HabitLog) => {
+      const key = log.logDate
+      if (!key) {
+        return
+      }
       const list = map.get(key) ?? []
-      list.push(entry)
+      list.push(log)
       map.set(key, list)
     })
     return map
-  }, [entries])
+  }, [logs])
 
-  const statusForEntries = (items: Entry[]) => {
+  const uniqueByHabit = (items: HabitLog[]) => {
+    const map = new Map<string, HabitLog>()
+    items.forEach((log) => {
+      map.set(log.habitId, log)
+    })
+    return Array.from(map.values())
+  }
+
+  const statusForEntries = (items: HabitLog[]) => {
     if (items.length === 0) {
       return 'empty'
     }
-    const statuses = items.map((entry: Entry) => entry.status)
-    if (statuses.includes('missed')) {
+    const statuses = items.map((entry: HabitLog) => entry.status)
+    if (statuses.includes('MISSED')) {
       return 'missed'
     }
-    if (statuses.includes('partial')) {
-      return 'partial'
-    }
-    if (statuses.includes('complete')) {
+    if (statuses.includes('DONE')) {
       return 'complete'
     }
     return 'empty'
@@ -77,7 +88,7 @@ const CalendarPage = () => {
     year: 'numeric',
   }).format(currentDate)
 
-  const selectedEntries = entriesByDate.get(selectedDate) ?? []
+  const selectedEntries = logsByDate.get(selectedDate) ?? []
   const habitMap = useMemo(() => {
     return new Map<string, Habit>(
       habits.map((habit: Habit) => [habit.id, habit])
@@ -141,9 +152,10 @@ const CalendarPage = () => {
                   />
                 )
               }
-              const key = formatDateKey(date)
-              const entriesForDay = entriesByDate.get(key) ?? []
-              const status = statusForEntries(entriesForDay)
+              const key = toDateKey(date)
+              const entriesForDay = logsByDate.get(key) ?? []
+              const uniqueEntries = uniqueByHabit(entriesForDay)
+              const status = statusForEntries(uniqueEntries)
               return (
                 <button
                   key={key}
@@ -154,7 +166,7 @@ const CalendarPage = () => {
                 >
                   <strong>{date.getDate()}</strong>
                   <div className="status-dot"></div>
-                  <span>{entriesForDay.length} habits</span>
+                  <span>{uniqueEntries.length} habits</span>
                 </button>
               )
             })}
@@ -168,10 +180,6 @@ const CalendarPage = () => {
             <div className="legend-item">
               <span className="status-dot status-complete"></span>
               <span>Complete</span>
-            </div>
-            <div className="legend-item">
-              <span className="status-dot status-partial"></span>
-              <span>Partial</span>
             </div>
             <div className="legend-item">
               <span className="status-dot status-missed"></span>
