@@ -743,6 +743,69 @@
   gap: 16px;
 }
 
+.habit-checklist {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.habit-check-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.2s ease, border 0.2s ease, transform 0.2s ease;
+}
+
+.habit-check-item:hover {
+  background: #f8fafc;
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.habit-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.habit-check-label input {
+  width: 16px;
+  height: 16px;
+}
+
+.habit-check-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.habit-check-item.is-complete .habit-check-title {
+  text-decoration: line-through;
+  color: var(--text-light);
+}
+
+.habit-check-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.habit-check-item.is-complete .habit-check-status {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+}
+
 .habit-card {
   display: grid;
   gap: 12px;
@@ -903,6 +966,35 @@
   gap: 16px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+  padding: 24px;
+}
+
+.modal-card {
+  width: min(420px, 92vw);
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 12px;
+  animation: popIn 0.2s ease;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .clean-list {
   list-style: none;
   padding: 0;
@@ -939,6 +1031,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
+}
+
+.profile-stats {
+  margin-top: 12px;
 }
 
 .setting-row {
@@ -1001,12 +1097,12 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   border: none;
-  background: radial-gradient(circle at 30% 30%, #ffffff, #c7d2fe 55%, #6366f1 100%);
-  box-shadow: 0 18px 36px rgba(79, 70, 229, 0.35), 0 0 0 6px rgba(99, 102, 241, 0.12);
+  background: radial-gradient(circle at 30% 25%, #ffffff, #dbeafe 45%, #111827 85%);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.25), 0 0 0 6px rgba(59, 130, 246, 0.16);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -1018,11 +1114,11 @@
 }
 
 .orb-core {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ffffff, #a5b4fc);
-  box-shadow: inset 0 0 12px rgba(79, 70, 229, 0.35);
+  background: radial-gradient(circle at 30% 30%, #ffffff, #93c5fd 65%);
+  box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.45);
 }
 
 .orb-ring {
@@ -1030,10 +1126,10 @@
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 18px rgba(99, 102, 241, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.45);
   opacity: 0.8;
-  animation: orbPulse 2.4s ease-in-out infinite;
+  animation: orbPulse 2.6s ease-in-out infinite;
 }
 
 .chatbot-widget.is-minimized {
@@ -1147,6 +1243,17 @@
   }
   50% {
     transform: translateY(-6px) scale(1.02);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

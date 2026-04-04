@@ -1,7 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuthStore } from '../store/authStore'
 import type { AuthState } from '../store/authStore'
+import { useHabitStore } from '../store/habitStore'
+import type { HabitState } from '../store/habitStore'
+import type { HabitLog } from '../types/api'
+
+const toDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const dateKeyOffset = (offset: number) => {
+  const date = new Date()
+  date.setDate(date.getDate() - offset)
+  return toDateKey(date)
+}
 
 const ProfilePage = () => {
   const user = useAuthStore((state: AuthState) => state.user)
@@ -11,6 +27,10 @@ const ProfilePage = () => {
   )
   const status = useAuthStore((state: AuthState) => state.status)
   const error = useAuthStore((state: AuthState) => state.error)
+  const habits = useHabitStore((state: HabitState) => state.habits)
+  const logs = useHabitStore((state: HabitState) => state.logs)
+  const fetchHabits = useHabitStore((state: HabitState) => state.fetchHabits)
+  const fetchLogs = useHabitStore((state: HabitState) => state.fetchLogs)
   const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
@@ -30,6 +50,108 @@ const ProfilePage = () => {
       setEndGoal(user.endGoal ?? '')
     }
   }, [user])
+
+  useEffect(() => {
+    fetchHabits()
+    fetchLogs()
+  }, [fetchHabits, fetchLogs])
+
+  const logsByDate = useMemo(() => {
+    const map = new Map<string, HabitLog[]>()
+    logs.forEach((log: HabitLog) => {
+      if (!log.logDate) {
+        return
+      }
+      const list = map.get(log.logDate) ?? []
+      list.push(log)
+      map.set(log.logDate, list)
+    })
+    return map
+  }, [logs])
+
+  const totalHabits = habits.length
+  const completionRateForDate = (dateKey: string) => {
+    if (!totalHabits) {
+      return 0
+    }
+    const dayEntries = logsByDate.get(dateKey) ?? []
+    const map = new Map<string, HabitLog>()
+    dayEntries.forEach((entry) => {
+      map.set(entry.habitId, entry)
+    })
+    const completed = Array.from(map.values()).filter(
+      (entry) => entry.status === 'DONE'
+    ).length
+    return completed / totalHabits
+  }
+
+  const completedToday = useMemo(() => {
+    const todayEntries = logsByDate.get(toDateKey(new Date())) ?? []
+    const map = new Map<string, HabitLog>()
+    todayEntries.forEach((entry) => {
+      map.set(entry.habitId, entry)
+    })
+    return Array.from(map.values()).filter(
+      (entry) => entry.status === 'DONE'
+    ).length
+  }, [logsByDate])
+
+  const weeklyKeys = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => dateKeyOffset(index)),
+    []
+  )
+
+  const weeklyAverage = totalHabits
+    ? Math.round(
+        (weeklyKeys.reduce(
+          (sum, key) => sum + completionRateForDate(key),
+          0
+        ) /
+          weeklyKeys.length) *
+          100
+      )
+    : 0
+
+  const currentStreak = useMemo(() => {
+    if (!totalHabits) {
+      return 0
+    }
+    let streak = 0
+    for (let offset = 0; offset < 365; offset += 1) {
+      if (completionRateForDate(dateKeyOffset(offset)) === 1) {
+        streak += 1
+      } else {
+        break
+      }
+    }
+    return streak
+  }, [logsByDate, totalHabits])
+
+  const bestStreak = useMemo(() => {
+    if (!totalHabits || logsByDate.size === 0) {
+      return 0
+    }
+    const dateKeys = Array.from(logsByDate.keys()).sort()
+    const start = new Date(`${dateKeys[0]}T00:00:00`)
+    const end = new Date()
+    let maxStreak = 0
+    let current = 0
+    for (
+      let date = new Date(start);
+      date <= end;
+      date.setDate(date.getDate() + 1)
+    ) {
+      if (completionRateForDate(toDateKey(date)) === 1) {
+        current += 1
+        if (current > maxStreak) {
+          maxStreak = current
+        }
+      } else {
+        current = 0
+      }
+    }
+    return maxStreak
+  }, [logsByDate, totalHabits])
 
   const getInitials = (value: string) =>
     value
@@ -188,54 +310,32 @@ const ProfilePage = () => {
             {status === 'loading' ? 'Updating...' : 'Update password'}
           </button>
         </form>
-        <div className="card">
-          <h3>Notifications</h3>
-          <div className="setting-row">
-            <span>Daily reminders</span>
-            <div className="toggle">
-              <span></span>
-            </div>
-          </div>
-          <div className="setting-row">
-            <span>Weekly summary</span>
-            <div className="toggle">
-              <span></span>
-            </div>
-          </div>
-          <div className="setting-row">
-            <span>Tips and features</span>
-            <div className="toggle">
-              <span></span>
-            </div>
-          </div>
-        </div>
+      </div>
+
+      <div className="profile-stats">
         <div className="card">
           <h3>Statistics</h3>
           <div className="quick-stats">
             <div className="stat-tile">
               <p className="meta-label">Total habits</p>
-              <p className="meta-value">18</p>
+              <p className="meta-value">{totalHabits}</p>
+            </div>
+            <div className="stat-tile">
+              <p className="meta-label">Completed today</p>
+              <p className="meta-value">{completedToday}</p>
+            </div>
+            <div className="stat-tile">
+              <p className="meta-label">Current streak</p>
+              <p className="meta-value">{currentStreak} days</p>
+            </div>
+            <div className="stat-tile">
+              <p className="meta-label">Weekly average</p>
+              <p className="meta-value">{weeklyAverage}%</p>
             </div>
             <div className="stat-tile">
               <p className="meta-label">Best streak</p>
-              <p className="meta-value">27 days</p>
+              <p className="meta-value">{bestStreak} days</p>
             </div>
-            <div className="stat-tile">
-              <p className="meta-label">Completion rate</p>
-              <p className="meta-value">84%</p>
-            </div>
-          </div>
-        </div>
-        <div className="card danger-zone">
-          <h3>Danger zone</h3>
-          <p className="section-sub">Export or delete your account data.</p>
-          <div className="hero-actions">
-            <button className="btn btn-secondary" type="button">
-              Export data
-            </button>
-            <button className="btn btn-primary" type="button">
-              Delete account
-            </button>
           </div>
         </div>
       </div>

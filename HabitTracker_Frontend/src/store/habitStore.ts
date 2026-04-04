@@ -1,6 +1,6 @@
 import { create, type StateCreator } from 'zustand'
 import { habitService } from '../services/habitService'
-import type { Entry, Habit, HabitStatus } from '../types/api'
+import type { Habit, HabitDifficulty, HabitLog, HabitLogStatus } from '../types/api'
 
 const getErrorMessage = (error: unknown) => {
   if (typeof error === 'string') {
@@ -16,20 +16,28 @@ type HabitStatusState = 'idle' | 'loading' | 'error'
 
 export type HabitState = {
   habits: Habit[]
-  entries: Entry[]
+  logs: HabitLog[]
   status: HabitStatusState
   error: string | null
   fetchHabits: () => Promise<void>
-  fetchEntries: (params?: { from?: string; to?: string }) => Promise<void>
-  createHabit: (payload: { name: string; description?: string; tags?: string[] }) => Promise<void>
-  updateHabit: (id: string, payload: { name: string; description?: string; tags?: string[] }) => Promise<void>
+  fetchLogs: (params?: { from?: string; to?: string }) => Promise<void>
+  createHabit: (payload: {
+    name: string
+    category: string
+    difficulty: HabitDifficulty
+  }) => Promise<void>
+  updateHabit: (id: string, payload: {
+    name: string
+    category: string
+    difficulty: HabitDifficulty
+  }) => Promise<void>
   deleteHabit: (id: string) => Promise<void>
-  logHabitEntry: (id: string, payload: { date: string; status: HabitStatus }) => Promise<void>
+  logHabit: (id: string, payload: { logDate: string; status: HabitLogStatus; timezone?: string }) => Promise<void>
 }
 
 const habitCreator: StateCreator<HabitState> = (set, get) => ({
   habits: [],
-  entries: [],
+  logs: [],
   status: 'idle',
   error: null,
   fetchHabits: async () => {
@@ -41,16 +49,20 @@ const habitCreator: StateCreator<HabitState> = (set, get) => ({
       set({ status: 'error', error: getErrorMessage(error) })
     }
   },
-  fetchEntries: async (params?: { from?: string; to?: string }) => {
+  fetchLogs: async (params?: { from?: string; to?: string }) => {
     set({ status: 'loading', error: null })
     try {
-      const entries = await habitService.getEntries(params)
-      set({ entries, status: 'idle' })
+      const existingHabits = get().habits.length
+        ? get().habits
+        : await habitService.getHabits()
+      const habitIds = existingHabits.map((habit: Habit) => habit.id)
+      const logs = await habitService.getLogsForRange(habitIds, params)
+      set({ habits: existingHabits, logs, status: 'idle' })
     } catch (error) {
       set({ status: 'error', error: getErrorMessage(error) })
     }
   },
-  createHabit: async (payload: { name: string; description?: string; tags?: string[] }) => {
+  createHabit: async (payload: { name: string; category: string; difficulty: HabitDifficulty }) => {
     set({ status: 'loading', error: null })
     try {
       const habit = await habitService.createHabit(payload)
@@ -62,7 +74,7 @@ const habitCreator: StateCreator<HabitState> = (set, get) => ({
   },
   updateHabit: async (
     id: string,
-    payload: { name: string; description?: string; tags?: string[] }
+    payload: { name: string; category: string; difficulty: HabitDifficulty }
   ) => {
     set({ status: 'loading', error: null })
     try {
@@ -91,18 +103,15 @@ const habitCreator: StateCreator<HabitState> = (set, get) => ({
       throw error
     }
   },
-  logHabitEntry: async (
-    id: string,
-    payload: { date: string; status: HabitStatus }
-  ) => {
+  logHabit: async (id: string, payload: { logDate: string; status: HabitLogStatus; timezone?: string }) => {
     set({ status: 'loading', error: null })
     try {
-      const entry = await habitService.logHabitEntry(id, payload)
-      const existing = get().entries
-      const updated = existing.some((item: Entry) => item.id === entry.id)
-        ? existing.map((item: Entry) => (item.id === entry.id ? entry : item))
-        : [entry, ...existing]
-      set({ entries: updated, status: 'idle' })
+      const log = await habitService.createHabitLog(id, payload)
+      const existing = get().logs
+      const updated = existing.some((item: HabitLog) => item.id === log.id)
+        ? existing.map((item: HabitLog) => (item.id === log.id ? log : item))
+        : [log, ...existing]
+      set({ logs: updated, status: 'idle' })
     } catch (error) {
       set({ status: 'error', error: getErrorMessage(error) })
       throw error
