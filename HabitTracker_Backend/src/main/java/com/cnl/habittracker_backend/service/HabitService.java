@@ -1,9 +1,11 @@
 package com.cnl.habittracker_backend.service;
 
 import com.cnl.habittracker_backend.model.Habit;
-import com.cnl.habittracker_backend.model.dto.HabitRequest;
-import com.cnl.habittracker_backend.model.dto.HabitResponse;
+import com.cnl.habittracker_backend.model.Users;
+import com.cnl.habittracker_backend.model.dto.Habit.HabitRequest;
+import com.cnl.habittracker_backend.model.dto.Habit.HabitResponse;
 import com.cnl.habittracker_backend.repository.HabitRepository;
+import com.cnl.habittracker_backend.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,12 +17,19 @@ public class HabitService {
     @Autowired
     private HabitRepository repository;
 
+    @Autowired
+    private UsersRepository usersRepository;
+
     //create Habit
-    public HabitResponse createHabit(HabitRequest request) {
+    public HabitResponse createHabit(int userId, HabitRequest request) {
 
         //map HabitRequest to HabitResponse
 
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Habit habit = new Habit();
+        habit.setUser(user);
         habit.setHabitName(request.habitName());
         habit.setHabitDescription(request.habitDescription());
         habit.setHabitTags(request.habitTags());
@@ -29,6 +38,7 @@ public class HabitService {
 
         HabitResponse response = new HabitResponse(
                 savedHabit.getHabitId(),
+                savedHabit.getUser().getUserId(),
                 savedHabit.getHabitName(),
                 savedHabit.getHabitDescription(),
                 savedHabit.getHabitTags(),
@@ -41,13 +51,19 @@ public class HabitService {
     }
 
     //read Habit
-    public HabitResponse getHabit(int habitId) {
+    public HabitResponse getHabit(int userId, int habitId) {
 
         Habit habit = repository.findById(habitId)
                 .orElseThrow( () -> new RuntimeException("Habit not found") );
 
+        // Validate ownership
+        if (habit.getUser().getUserId() != userId) {
+            throw new RuntimeException("Unauthorized: You can only access your own habits");
+        }
+
         return new HabitResponse(
                 habit.getHabitId(),
+                habit.getUser().getUserId(),
                 habit.getHabitName(),
                 habit.getHabitDescription(),
                 habit.getHabitTags(),
@@ -55,13 +71,14 @@ public class HabitService {
         );
     }
 
-    //read Habits
-    public List<HabitResponse> getHabits() {
+    //read Habits - filtered by userId
+    public List<HabitResponse> getHabits(int userId) {
 
-        return repository.findAll()
+        return repository.findByUser_UserId(userId)
                 .stream()
                 .map(habit -> new HabitResponse(
                     habit.getHabitId(),
+                        habit.getUser().getUserId(),
                     habit.getHabitName(),
                     habit.getHabitDescription(),
                     habit.getHabitTags(),
@@ -71,10 +88,15 @@ public class HabitService {
     }
 
     //update Habit
-    public HabitResponse updateHabit(int habitId, HabitRequest request) {
+    public HabitResponse updateHabit(int userId, int habitId, HabitRequest request) {
 
         Habit habit = repository.findById(habitId)
                 .orElseThrow(() -> new RuntimeException("Habit not found"));
+
+        // Validate ownership
+        if (habit.getUser().getUserId() != userId) {
+            throw new RuntimeException("Unauthorized: You can only modify your own habits");
+        }
 
         if (request.habitName() != null) {
             habit.setHabitName(request.habitName());
@@ -92,6 +114,7 @@ public class HabitService {
 
         return new HabitResponse(
                 updatedHabit.getHabitId(),
+                habit.getUser().getUserId(),
                 updatedHabit.getHabitName(),
                 updatedHabit.getHabitDescription(),
                 updatedHabit.getHabitTags(),
@@ -99,7 +122,15 @@ public class HabitService {
         );
     }
 
-    public void deleteHabit(int habitId) {
+    public void deleteHabit(int userId, int habitId) {
+        Habit habit = repository.findById(habitId)
+                .orElseThrow(() -> new RuntimeException("Habit not found"));
+
+        // Validate ownership
+        if (habit.getUser().getUserId() != userId) {
+            throw new RuntimeException("Unauthorized: You can only delete your own habits");
+        }
+
         repository.deleteById(habitId);
         System.out.println("Habit deleted");
     }

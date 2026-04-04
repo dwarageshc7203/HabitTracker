@@ -1,8 +1,9 @@
 package com.cnl.habittracker_backend.controller;
 
-import com.cnl.habittracker_backend.model.dto.HabitRequest;
-import com.cnl.habittracker_backend.model.dto.HabitResponse;
+import com.cnl.habittracker_backend.model.dto.Habit.HabitRequest;
+import com.cnl.habittracker_backend.model.dto.Habit.HabitResponse;
 import com.cnl.habittracker_backend.service.HabitService;
+import com.cnl.habittracker_backend.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,46 +12,64 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 @CrossOrigin
 public class HabitController {
 
     @Autowired
     private HabitService service;
 
-    //Create Habit
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    // Create Habit
     @PostMapping("/habits")
-    public ResponseEntity<HabitResponse> createHabit(@RequestBody HabitRequest habitRequest) {
+    public ResponseEntity<HabitResponse> createHabit(
+            @RequestHeader("Authorization") String token,
+            @RequestBody HabitRequest habitRequest) {
         System.out.println("Create Habit method called");
-        return new ResponseEntity<>(service.createHabit(habitRequest), HttpStatus.OK);
+        int userId = securityUtil.extractUserIdFromToken(token);
+        return new ResponseEntity<>(service.createHabit(userId, habitRequest), HttpStatus.CREATED);
     }
 
-    //Read Habit
+    // Read Single Habit
     @GetMapping("/habits/{habitId}")
-    public ResponseEntity<HabitResponse> getHabit(@PathVariable int habitId) {
+    public ResponseEntity<HabitResponse> getHabit(
+            @RequestHeader("Authorization") String token,
+            @PathVariable int habitId) {
         System.out.println("Get Habit method called");
-        return new ResponseEntity<>(service.getHabit(habitId), HttpStatus.OK);
+        int userId = securityUtil.extractUserIdFromToken(token);
+        return new ResponseEntity<>(service.getHabit(userId, habitId), HttpStatus.OK);
     }
 
-
-    //Read Habits
+    // Read All Habits for the User
     @GetMapping("/habits")
-    public ResponseEntity<List<HabitResponse>> getHabits() {
+    public ResponseEntity<List<HabitResponse>> getHabits(
+            @RequestHeader("Authorization") String token) {
         System.out.println("Get Habits method called");
-        return new ResponseEntity<>(service.getHabits(), HttpStatus.OK);
+        int userId = securityUtil.extractUserIdFromToken(token);
+        return new ResponseEntity<>(service.getHabits(userId), HttpStatus.OK);
     }
 
-    //Update Habit
+    // Update Habit
     @PutMapping("/habits/{habitId}")
-    public ResponseEntity<HabitResponse> updateHabit(@PathVariable int habitId, @RequestBody HabitRequest request) {
+    public ResponseEntity<HabitResponse> updateHabit(
+            @RequestHeader("Authorization") String token,
+            @PathVariable int habitId,
+            @RequestBody HabitRequest request) {
         System.out.println("Update Habit method called");
-        return new ResponseEntity<>(service.updateHabit(habitId, request), HttpStatus.OK);
+        int userId = securityUtil.extractUserIdFromToken(token);
+        return new ResponseEntity<>(service.updateHabit(userId, habitId, request), HttpStatus.OK);
     }
 
-    //Delete Habit
+    // Delete Habit
     @DeleteMapping("/habits/{habitId}")
-    public ResponseEntity<Void> deleteHabit(@PathVariable int habitId) {
+    public ResponseEntity<Void> deleteHabit(
+            @RequestHeader("Authorization") String token,
+            @PathVariable int habitId) {
         System.out.println("Delete Habit method called");
-        service.deleteHabit(habitId);
+        int userId = securityUtil.extractUserIdFromToken(token);
+        service.deleteHabit(userId, habitId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
