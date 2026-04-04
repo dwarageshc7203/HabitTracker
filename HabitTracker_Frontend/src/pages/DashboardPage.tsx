@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import HabitCard from '../components/habits/HabitCard'
-import HabitHeatmap from '../components/habits/HabitHeatmap'
 import { habitService } from '../services/habitService'
 import { useAuthStore } from '../store/authStore'
 import type { AuthState } from '../store/authStore'
@@ -67,15 +66,9 @@ const DashboardPage = () => {
     [habitsQuery.data]
   )
 
-  const rangeStartKey = useMemo(() => {
-    const start = new Date()
-    start.setDate(start.getDate() - 29)
-    return toDateKey(start)
-  }, [])
-
   const logsQueryKey = useMemo(
-    () => ['habitLogsRange', rangeStartKey, todayKey, habitIdsKey],
-    [rangeStartKey, todayKey, habitIdsKey]
+    () => ['habitLogsToday', todayKey, habitIdsKey],
+    [todayKey, habitIdsKey]
   )
 
   const logsQuery = useQuery<HabitLog[]>({
@@ -85,13 +78,13 @@ const DashboardPage = () => {
       const habits = habitsQuery.data ?? []
       const habitIds = habits.map((habit: Habit) => habit.id)
       return habitService.getLogsForRange(habitIds, {
-        from: rangeStartKey,
+        from: todayKey,
         to: todayKey,
       })
     },
   })
 
-  const logMutation = useMutation({
+  const createLogMutation = useMutation({
     mutationFn: ({ habitId, status }: { habitId: string; status: HabitLogStatus }) =>
       habitService.createHabitLog(habitId, {
         logDate: todayKey,
@@ -130,6 +123,41 @@ const DashboardPage = () => {
         typeof error === 'object' && error && 'message' in error
           ? String(error.message)
           : 'Unable to log habit.'
+      setLogError(message)
+      if (context?.previous) {
+        queryClient.setQueryData(logsQueryKey, context.previous)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: logsQueryKey })
+    },
+  })
+
+  const deleteLogMutation = useMutation({
+    mutationFn: ({ habitId }: { habitId: string }) =>
+      habitService.deleteHabitLog(habitId, todayKey),
+    onMutate: async ({ habitId }) => {
+      setLogError(null)
+      await queryClient.cancelQueries({ queryKey: logsQueryKey })
+      const previous = queryClient.getQueryData<HabitLog[]>(logsQueryKey)
+
+      queryClient.setQueryData<HabitLog[]>(logsQueryKey, (current) =>
+        (current ?? []).filter(
+          (item) => !(item.habitId === habitId && item.logDate === todayKey)
+        )
+      )
+
+      return { previous }
+    },
+    onError: (
+      error: unknown,
+      _variables: { habitId: string },
+      context?: { previous?: HabitLog[] }
+    ) => {
+      const message =
+        typeof error === 'object' && error && 'message' in error
+          ? String(error.message)
+          : 'Unable to undo habit.'
       setLogError(message)
       if (context?.previous) {
         queryClient.setQueryData(logsQueryKey, context.previous)
@@ -294,10 +322,6 @@ const DashboardPage = () => {
         </p>
       )}
 
-      <div className="mt-6">
-        <HabitHeatmap logs={logs} totalHabits={habits.length} />
-      </div>
-
       <div className="mt-8 flex items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-slate-900">Habits</h3>
@@ -428,7 +452,7 @@ const DashboardPage = () => {
         {habits.map((habit: Habit) => {
           const log = logsByHabitToday[habit.id]
           const isComplete = log?.status === 'DONE'
-          const isDisabled = Boolean(log)
+          const isDisabled = createLogMutation.isPending || deleteLogMutation.isPending
           return (
             <div key={habit.id} className="space-y-3">
               <HabitCard
@@ -438,12 +462,16 @@ const DashboardPage = () => {
                 longestStreak={habit.longestStreak}
                 completionRate={habit.completionRate}
                 isComplete={isComplete}
-                isDisabled={isDisabled || logMutation.isPending}
+                isDisabled={isDisabled}
                 onToggle={(checked) => {
-                  if (!checked || isDisabled) {
+                  if (isDisabled) {
                     return
                   }
-                  logMutation.mutate({ habitId: habit.id, status: 'DONE' })
+                  if (checked) {
+                    createLogMutation.mutate({ habitId: habit.id, status: 'DONE' })
+                  } else if (log) {
+                    deleteLogMutation.mutate({ habitId: habit.id })
+                  }
                 }}
                 onEdit={() => {
                   setEditingHabitId(habit.id)

@@ -1,4 +1,5 @@
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
+import ChatbotWidget from '../chatbot/ChatbotWidget'
 import { useAuthStore } from '../../store/authStore'
 import type { AuthState } from '../../store/authStore'
 
@@ -76,6 +77,7 @@ const AppLayout = () => {
         <main className="app-content">
           <Outlet />
         </main>
+        <ChatbotWidget />
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import HabitHeatmap from '../components/habits/HabitHeatmap'
 import { useAuthStore } from '../store/authStore'
 import type { AuthState } from '../store/authStore'
 import { useHabitStore } from '../store/habitStore'
@@ -40,6 +41,12 @@ const ProfilePage = () => {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const todayKey = useMemo(() => toDateKey(new Date()), [])
+  const heatmapStartKey = useMemo(() => {
+    const start = new Date()
+    start.setDate(start.getDate() - 29)
+    return toDateKey(start)
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -205,138 +212,173 @@ const ProfilePage = () => {
     }
   }
 
+  const heatmapLogs = useMemo(
+    () =>
+      logs.filter(
+        (log) => log.logDate >= heatmapStartKey && log.logDate <= todayKey
+      ),
+    [logs, heatmapStartKey, todayKey]
+  )
+
   return (
-    <section className="profile-page" aria-label="Profile">
-      <div className="profile-header">
-        <div className="avatar-lg">
+    <section className="mx-auto w-full max-w-6xl px-6 py-10" aria-label="Profile">
+      <div className="flex flex-wrap items-center gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="grid h-16 w-16 place-items-center rounded-full bg-slate-100 text-lg font-semibold text-slate-600">
           {profilePhotoUrl ? (
-            <img className="avatar-img" src={profilePhotoUrl} alt="Profile" />
+            <img
+              className="h-16 w-16 rounded-full object-cover"
+              src={profilePhotoUrl}
+              alt="Profile"
+            />
           ) : (
             getInitials(userName)
           )}
         </div>
-        <div>
-          <p className="eyebrow">Profile</p>
-          <h2>{userName || 'Your profile'}</h2>
-          <p className="section-sub">Member since {user?.createdAt ?? '2025'}</p>
+        <div className="flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Profile</p>
+          <h2 className="text-2xl font-semibold text-slate-900">
+            {userName || 'Your profile'}
+          </h2>
+          <p className="text-sm text-slate-500">Member since {user?.createdAt ?? '2025'}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <p className="text-xs uppercase text-slate-400">Streak</p>
+          <p className="text-lg font-semibold text-slate-900">{currentStreak} days</p>
         </div>
       </div>
 
-      <div className="profile-grid">
-        <form className="card" onSubmit={handleProfileSave}>
-          <h3>Profile information</h3>
-          <label className="form-field">
-            Username
-            <input
-              className="input"
-              type="text"
-              value={userName}
-              onChange={(event) => setUserName(event.target.value)}
-            />
-          </label>
-          <label className="form-field">
-            Email
-            <input
-              className="input"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </label>
-          <label className="form-field">
-            Date of birth
-            <input
-              className="input"
-              type="date"
-              value={dateOfBirth}
-              onChange={(event) => setDateOfBirth(event.target.value)}
-            />
-          </label>
-          <label className="form-field">
-            Profile photo URL
-            <input
-              className="input"
-              type="url"
-              value={profilePhotoUrl}
-              onChange={(event) => setProfilePhotoUrl(event.target.value)}
-              placeholder="https://"
-            />
-          </label>
-          <label className="form-field">
-            End goal
-            <textarea
-              className="input"
-              rows={3}
-              value={endGoal}
-              onChange={(event) => setEndGoal(event.target.value)}
-            />
-          </label>
-          {(formError || error) && <p className="form-error">{formError ?? error}</p>}
-          <button className="btn btn-primary" type="submit" disabled={status === 'loading'}>
-            {status === 'loading' ? 'Saving...' : 'Save changes'}
+      <div className="mt-6 grid gap-6">
+        <form
+          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          onSubmit={handleProfileSave}
+        >
+          <h3 className="text-lg font-semibold text-slate-900">Personal info</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="text-sm text-slate-600">
+              Username
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                type="text"
+                value={userName}
+                onChange={(event) => setUserName(event.target.value)}
+              />
+            </label>
+            <label className="text-sm text-slate-600">
+              Email
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+            <label className="text-sm text-slate-600">
+              Date of birth
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                type="date"
+                value={dateOfBirth}
+                onChange={(event) => setDateOfBirth(event.target.value)}
+              />
+            </label>
+            <label className="text-sm text-slate-600">
+              Profile photo URL
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                type="url"
+                value={profilePhotoUrl}
+                onChange={(event) => setProfilePhotoUrl(event.target.value)}
+              />
+            </label>
+            <label className="text-sm text-slate-600 md:col-span-2">
+              End goal
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                type="text"
+                value={endGoal}
+                onChange={(event) => setEndGoal(event.target.value)}
+              />
+            </label>
+          </div>
+          {formError && <p className="mt-3 text-sm text-rose-600">{formError}</p>}
+          {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+          <button
+            className="mt-4 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            type="submit"
+          >
+            {status === 'loading' ? 'Updating...' : 'Update profile'}
           </button>
         </form>
-        <form className="card" onSubmit={handlePasswordSave}>
-          <h3>Account settings</h3>
-          <label className="form-field">
-            Current password
-            <input
-              className="input"
-              type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-            />
-          </label>
-          <label className="form-field">
-            New password
-            <input
-              className="input"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-            />
-          </label>
-          <label className="form-field">
-            Confirm password
-            <input
-              className="input"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-          </label>
-          {(formError || error) && <p className="form-error">{formError ?? error}</p>}
-          <button className="btn btn-primary" type="submit" disabled={status === 'loading'}>
-            {status === 'loading' ? 'Updating...' : 'Update password'}
-          </button>
-        </form>
-      </div>
 
-      <div className="profile-stats">
-        <div className="card">
-          <h3>Statistics</h3>
-          <div className="quick-stats">
-            <div className="stat-tile">
-              <p className="meta-label">Total habits</p>
-              <p className="meta-value">{totalHabits}</p>
-            </div>
-            <div className="stat-tile">
-              <p className="meta-label">Completed today</p>
-              <p className="meta-value">{completedToday}</p>
-            </div>
-            <div className="stat-tile">
-              <p className="meta-label">Current streak</p>
-              <p className="meta-value">{currentStreak} days</p>
-            </div>
-            <div className="stat-tile">
-              <p className="meta-label">Weekly average</p>
-              <p className="meta-value">{weeklyAverage}%</p>
-            </div>
-            <div className="stat-tile">
-              <p className="meta-label">Best streak</p>
-              <p className="meta-value">{bestStreak} days</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <HabitHeatmap logs={heatmapLogs} totalHabits={totalHabits} />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">Stats summary</h3>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase text-slate-400">Total habits</p>
+                <p className="text-lg font-semibold text-slate-900">{totalHabits}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase text-slate-400">Completed today</p>
+                <p className="text-lg font-semibold text-slate-900">{completedToday}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase text-slate-400">Weekly average</p>
+                <p className="text-lg font-semibold text-slate-900">{weeklyAverage}%</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs uppercase text-slate-400">Best streak</p>
+                <p className="text-lg font-semibold text-slate-900">{bestStreak} days</p>
+              </div>
             </div>
           </div>
+
+          <form
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            onSubmit={handlePasswordSave}
+          >
+            <h3 className="text-lg font-semibold text-slate-900">Security</h3>
+            <div className="mt-4 grid gap-4">
+              <label className="text-sm text-slate-600">
+                Current password
+                <input
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                />
+              </label>
+              <label className="text-sm text-slate-600">
+                New password
+                <input
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                />
+              </label>
+              <label className="text-sm text-slate-600">
+                Confirm password
+                <input
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-emerald-400 focus:outline-none"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+              </label>
+            </div>
+            {formError && <p className="mt-3 text-sm text-rose-600">{formError}</p>}
+            <button
+              className="mt-4 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              type="submit"
+            >
+              {status === 'loading' ? 'Updating...' : 'Update password'}
+            </button>
+          </form>
         </div>
       </div>
     </section>

@@ -6,10 +6,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface HabitLogRepository extends JpaRepository<HabitLog, Integer> {
     boolean existsByHabit_HabitIdAndLogDate(int habitId, LocalDate logDate);
+
+    Optional<HabitLog> findByHabit_HabitIdAndLogDate(int habitId, LocalDate logDate);
 
     List<HabitLog> findByHabit_HabitIdOrderByLogDateAsc(int habitId);
 

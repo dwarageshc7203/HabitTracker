@@ -43,4 +43,14 @@ public class HabitLogController {
         int userId = securityUtil.extractUserIdFromToken(token);
         return new ResponseEntity<>(service.getLogs(userId, habitId, from, to), HttpStatus.OK);
     }
+
+    @DeleteMapping("/habits/{habitId}/logs")
+    public ResponseEntity<Void> deleteLog(
+            @RequestHeader("Authorization") String token,
+            @PathVariable int habitId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        int userId = securityUtil.extractUserIdFromToken(token);
+        service.deleteLog(userId, habitId, date);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 }

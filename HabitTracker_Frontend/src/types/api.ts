@@ -36,3 +36,9 @@ export type AuthResponse = {
   token: string
   user?: User
 }
+
+export type HabitSuggestion = {
+  habitName: string
+  habitCategory: string
+  habitDifficulty: HabitDifficulty
+}
