@@ -77,6 +77,11 @@ VITE_API_BASE_URL=http://localhost:8080
 ```
 
 Create a `.env` file inside HabitTracker_Frontend to set this.
+For production, set it to your Render URL (example):
+
+```
+VITE_API_BASE_URL=https://habittracker-1-assk.onrender.com
+```
 
 ## API overview
 
@@ -119,7 +124,7 @@ If you want a different streak rule or server-side stats, update the logic in th
 ## Troubleshooting
 
 - 401 on login: ensure the user exists and you are logging in with email.
-- CORS errors: backend CORS is enabled for http://localhost:5173.
+- CORS errors: backend CORS is controlled by `app.cors.allowed-origin-patterns` in the backend config.
 - Calendar date mismatch: entries are stored using local date keys; clear old entries if needed.
 
 ## Additional docs
