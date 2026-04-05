@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Instant;
 import java.util.stream.Collectors;
@@ -16,6 +17,9 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @Value("${app.debug-errors:false}")
+    private boolean debugErrors;
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex) {
@@ -60,6 +64,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex) {
         logger.error("Unhandled exception", ex);
+        if (debugErrors) {
+            String detail = ex.getClass().getSimpleName();
+            String message = ex.getMessage();
+            if (message != null && !message.isBlank()) {
+                detail = detail + ": " + message;
+            }
+            return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, detail);
+        }
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
     }
 
