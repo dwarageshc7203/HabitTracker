@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,29 +28,29 @@ public class HabitLogController {
 
     @PostMapping("/habits/{habitId}/logs")
     public ResponseEntity<HabitLogResponse> createLog(
-            @RequestHeader("Authorization") String token,
+            Authentication auth,
             @PathVariable int habitId,
             @Valid @RequestBody HabitLogRequest request) {
-        int userId = securityUtil.extractUserIdFromToken(token);
+        int userId = securityUtil.extractUserId(auth);
         return new ResponseEntity<>(service.createLog(userId, habitId, request), HttpStatus.CREATED);
     }
 
     @GetMapping("/habits/{habitId}/logs")
     public ResponseEntity<List<HabitLogResponse>> getLogs(
-            @RequestHeader("Authorization") String token,
+            Authentication auth,
             @PathVariable int habitId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        int userId = securityUtil.extractUserIdFromToken(token);
+        int userId = securityUtil.extractUserId(auth);
         return new ResponseEntity<>(service.getLogs(userId, habitId, from, to), HttpStatus.OK);
     }
 
     @DeleteMapping("/habits/{habitId}/logs")
     public ResponseEntity<Void> deleteLog(
-            @RequestHeader("Authorization") String token,
+            Authentication auth,
             @PathVariable int habitId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        int userId = securityUtil.extractUserIdFromToken(token);
+        int userId = securityUtil.extractUserId(auth);
         service.deleteLog(userId, habitId, date);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

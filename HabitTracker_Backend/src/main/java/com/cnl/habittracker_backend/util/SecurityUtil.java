@@ -1,6 +1,7 @@
 package com.cnl.habittracker_backend.util;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -27,6 +28,23 @@ public class SecurityUtil {
         }
 
         return jwtUtil.extractUserId(token);
+    }
+
+    public int extractUserId(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new RuntimeException("Unauthenticated request");
+        }
+
+        Object principal = auth.getPrincipal();
+        if (principal instanceof Integer) {
+            return (Integer) principal;
+        }
+
+        if (principal instanceof String) {
+            return Integer.parseInt((String) principal);
+        }
+
+        throw new RuntimeException("Invalid authentication principal");
     }
 }
 
